@@ -69,6 +69,51 @@ def emitir_fuentes_desde_accion(accion, urls_emitidas):
     return nuevas_fuentes
 
 
+MENSAJE_FUERA_DE_TEMA = (
+    "Soy un agente especializado en responder solo preguntas sobre "
+    "tecnologías de la información y comunicaciones. "
+    "Siento no poder responder esa pregunta."
+)
+
+INSTRUCCIONES_CLASIFICADOR = """
+Eres un clasificador. Decide si la pregunta del usuario pertenece al área de
+tecnologías de la información y comunicaciones (TIC): software, hardware,
+redes, telecomunicaciones, internet, ciberseguridad, bases de datos,
+inteligencia artificial, cómputo en la nube, programación, sistemas, etc.
+
+Cuenta como TIC una pregunta sobre tecnología aplicada a otra área
+(por ejemplo, "uso de inteligencia artificial en diagnóstico médico").
+No cuenta como TIC una pregunta cuyo tema central es otra área
+(por ejemplo, síntomas o tratamientos de una enfermedad, recetas,
+deportes, historia, derecho).
+
+Responde únicamente con una palabra: SI o NO.
+"""
+
+
+def es_pregunta_tic(pregunta):
+    try:
+        respuesta = client.responses.create(
+            model=OPENAI_MODEL,
+            input=[
+                {
+                    "role": "system",
+                    "content": INSTRUCCIONES_CLASIFICADOR
+                },
+                {
+                    "role": "user",
+                    "content": pregunta
+                }
+            ]
+        )
+    except Exception as error:
+        # Si el clasificador falla, se deja continuar la investigación
+        print("ERROR CLASIFICADOR:", error)
+        return True
+
+    return not respuesta.output_text.strip().upper().startswith("NO")
+
+
 @app.route("/api/investigar", methods=["POST"])
 def investigar():
     datos = request.get_json(silent=True) or {}
@@ -198,6 +243,15 @@ Debes incluir al menos 3 filas cuando la pregunta lo permita.
                     "mensaje": "Analizando la pregunta de investigación..."
                 }
             )
+
+            if not es_pregunta_tic(pregunta):
+                yield sse(
+                    "fuera_de_tema",
+                    {
+                        "mensaje": MENSAJE_FUERA_DE_TEMA
+                    }
+                )
+                return
 
             stream = client.responses.create(
                 model=OPENAI_MODEL,

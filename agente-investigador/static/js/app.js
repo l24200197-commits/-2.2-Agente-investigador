@@ -13,6 +13,8 @@ const contadorFuentesFinal = document.getElementById("contadorFuentesFinal");
 const resultado = document.getElementById("resultado");
 const reporte = document.getElementById("reporte");
 const error = document.getElementById("error");
+const avisoTema = document.getElementById("avisoTema");
+const avisoTemaTexto = document.getElementById("avisoTemaTexto");
 
 let fuentesConsultadas = [];
 let reporteCompleto = "";
@@ -149,6 +151,10 @@ function procesarEventoSSE(bloque) {
         finalizarFlujo();
     }
 
+    if (tipo === "fuera_de_tema") {
+        mostrarAvisoTema(contenido.mensaje);
+    }
+
     if (tipo === "error") {
         const mensaje = contenido.detalle
             ? `${contenido.mensaje} ${contenido.detalle}`
@@ -164,6 +170,7 @@ function prepararInterfaz() {
     reporteCompleto = "";
 
     error.classList.add("d-none");
+    avisoTema.classList.add("d-none");
     resultado.classList.add("d-none");
     actividad.classList.remove("d-none");
 
@@ -1124,6 +1131,14 @@ function mostrarError(mensaje) {
     if (!actividad.classList.contains("d-none")) {
         estadoActual.textContent = "La investigación se interrumpió.";
     }
+}
+
+
+function mostrarAvisoTema(mensaje) {
+    actividad.classList.add("d-none");
+
+    avisoTemaTexto.textContent = mensaje;
+    avisoTema.classList.remove("d-none");
 }
 
 
