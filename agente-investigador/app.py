@@ -1,4 +1,5 @@
 import json
+import os
 
 from flask import Flask, Response, render_template, request, stream_with_context
 from openai import OpenAI
@@ -69,26 +70,9 @@ def emitir_fuentes_desde_accion(accion, urls_emitidas):
     return nuevas_fuentes
 
 
-MENSAJE_FUERA_DE_TEMA = (
-    "Soy un agente especializado en responder solo preguntas sobre "
-    "tecnologías de la información y comunicaciones. "
-    "Siento no poder responder esa pregunta."
-)
-
-INSTRUCCIONES_CLASIFICADOR = """
-Eres un clasificador. Decide si la pregunta del usuario pertenece al área de
-tecnologías de la información y comunicaciones (TIC): software, hardware,
-redes, telecomunicaciones, internet, ciberseguridad, bases de datos,
-inteligencia artificial, cómputo en la nube, programación, sistemas, etc.
-
-Cuenta como TIC una pregunta sobre tecnología aplicada a otra área
-(por ejemplo, "uso de inteligencia artificial en diagnóstico médico").
-No cuenta como TIC una pregunta cuyo tema central es otra área
-(por ejemplo, síntomas o tratamientos de una enfermedad, recetas,
-deportes, historia, derecho).
-
-Responde únicamente con una palabra: SI o NO.
-"""
+# Prompts compartidos con la versión de GitHub Pages (static/js/navegador.js)
+with open(os.path.join(app.static_folder, "prompts.json"), encoding="utf-8") as archivo:
+    PROMPTS = json.load(archivo)
 
 
 def es_pregunta_tic(pregunta):
@@ -98,7 +82,7 @@ def es_pregunta_tic(pregunta):
             input=[
                 {
                     "role": "system",
-                    "content": INSTRUCCIONES_CLASIFICADOR
+                    "content": PROMPTS["clasificador"]
                 },
                 {
                     "role": "user",
@@ -131,105 +115,6 @@ def investigar():
             status=400
         )
 
-    instrucciones = """
-Eres un agente investigador especializado en tecnologías de información
-y comunicaciones.
-
-Debes investigar la pregunta del usuario utilizando búsqueda web
-y varias fuentes confiables. El tono debe ser claro, profesional y
-académico, pensado para estudiantes universitarios.
-
-Proceso que debes seguir:
-1. Analiza la pregunta.
-2. Define un plan breve de investigación.
-3. Realiza búsquedas web.
-4. Consulta varias fuentes.
-5. Selecciona la información más relevante.
-6. Compara la información obtenida.
-7. Identifica coincidencias, diferencias y tendencias.
-8. Sintetiza la evidencia.
-9. Genera un reporte bien estructurado.
-
-REGLAS IMPORTANTES:
-- Escribe TODO en español.
-- No inventes datos ni fuentes.
-- Utiliza varias fuentes cuando sea posible.
-- Prioriza fuentes oficiales, organismos, documentación técnica,
-  universidades o medios especializados confiables.
-- No agregues una sección manual de URLs al final.
-- Las URLs se mostrarán por separado en la interfaz.
-
-FORMATO OBLIGATORIO DE SALIDA:
-Debes responder en Markdown usando exactamente esta estructura:
-
-# [Título breve del reporte]
-
-## 1. Pregunta de investigación
-[Reformula claramente la pregunta del usuario en 1 párrafo.]
-
-## 2. Plan de investigación
-- [Paso 1 del plan]
-- [Paso 2 del plan]
-- [Paso 3 del plan]
-- [Paso 4 del plan]
-- [Paso 5 del plan]
-
-## 3. Hallazgos principales
-
-Para cada hallazgo utiliza EXACTAMENTE este formato y coloca cada campo
-en una línea independiente:
-
-### Hallazgo 1
-**Nombre:** [Nombre breve y claro del hallazgo]
-**Descripción:** [Explicación del hallazgo. No incluyas aquí la fuente ni la URL.]
-**Fuente:** [Nombre del sitio, institución, empresa u organismo]
-**URL:** [URL completa de la fuente principal]
-
-### Hallazgo 2
-**Nombre:** [Nombre breve y claro del hallazgo]
-**Descripción:** [Explicación del hallazgo. No incluyas aquí la fuente ni la URL.]
-**Fuente:** [Nombre del sitio, institución, empresa u organismo]
-**URL:** [URL completa de la fuente principal]
-
-### Hallazgo 3
-**Nombre:** [Nombre breve y claro del hallazgo]
-**Descripción:** [Explicación del hallazgo. No incluyas aquí la fuente ni la URL.]
-**Fuente:** [Nombre del sitio, institución, empresa u organismo]
-**URL:** [URL completa de la fuente principal]
-
-Incluye más hallazgos si es necesario.
-
-IMPORTANTE PARA HALLAZGOS:
-- El nombre debe ser corto: máximo una línea.
-- La descripción debe contener solo la explicación.
-- La fuente debe contener solo el nombre de la fuente.
-- La URL debe contener solo la dirección web.
-- No combines Nombre, Descripción, Fuente y URL en una misma línea.
-
-## 4. Comparación de información
-Presenta una tabla Markdown con estas columnas exactas:
-| Elemento | Descripción | Ventajas | Limitaciones | Escenarios recomendados |
-
-Debes incluir al menos 3 filas cuando la pregunta lo permita.
-
-## 5. Coincidencias y diferencias entre fuentes
-### Coincidencias
-- [Coincidencia 1]
-- [Coincidencia 2]
-
-### Diferencias
-- [Diferencia 1]
-- [Diferencia 2]
-
-## 6. Tendencias identificadas
-- [Tendencia 1]
-- [Tendencia 2]
-- [Tendencia 3]
-
-## 7. Conclusiones
-[Conclusión final en 1 o 2 párrafos.]
-"""
-
     @stream_with_context
     def generar():
         urls_emitidas = set()
@@ -248,7 +133,7 @@ Debes incluir al menos 3 filas cuando la pregunta lo permita.
                 yield sse(
                     "fuera_de_tema",
                     {
-                        "mensaje": MENSAJE_FUERA_DE_TEMA
+                        "mensaje": PROMPTS["mensaje_fuera_de_tema"]
                     }
                 )
                 return
@@ -264,7 +149,7 @@ Debes incluir al menos 3 filas cuando la pregunta lo permita.
                 input=[
                     {
                         "role": "system",
-                        "content": instrucciones
+                        "content": PROMPTS["investigador"]
                     },
                     {
                         "role": "user",

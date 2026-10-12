@@ -16,11 +16,48 @@ const error = document.getElementById("error");
 const avisoTema = document.getElementById("avisoTema");
 const avisoTemaTexto = document.getElementById("avisoTemaTexto");
 
+const panelApiKey = document.getElementById("panelApiKey");
+const apiKey = document.getElementById("apiKey");
+const recordarApiKey = document.getElementById("recordarApiKey");
+
+// "servidor": Flask (app.py) hace las llamadas a OpenAI.
+// "navegador": GitHub Pages; las llamadas se hacen desde navegador.js.
+const MODO_NAVEGADOR = window.AGENTE_MODO === "navegador";
+const CLAVE_API_KEY_GUARDADA = "agente-investigador-api-key";
+
 let fuentesConsultadas = [];
 let reporteCompleto = "";
 
 
 btnInvestigar.addEventListener("click", investigar);
+
+if (MODO_NAVEGADOR) {
+    panelApiKey.classList.remove("d-none");
+
+    try {
+        const guardada = localStorage.getItem(CLAVE_API_KEY_GUARDADA);
+
+        if (guardada) {
+            apiKey.value = guardada;
+            recordarApiKey.checked = true;
+        }
+    } catch {
+        // Sin acceso a localStorage: el visitante escribe la clave cada vez
+    }
+}
+
+
+function guardarPreferenciaApiKey(clave) {
+    try {
+        if (recordarApiKey.checked) {
+            localStorage.setItem(CLAVE_API_KEY_GUARDADA, clave);
+        } else {
+            localStorage.removeItem(CLAVE_API_KEY_GUARDADA);
+        }
+    } catch {
+        // Sin acceso a localStorage: no se recuerda la clave
+    }
+}
 
 
 async function investigar() {
@@ -31,9 +68,23 @@ async function investigar() {
         return;
     }
 
+    const clave = apiKey.value.trim();
+
+    if (MODO_NAVEGADOR && !clave) {
+        mostrarError("Escribe tu API Key de OpenAI para iniciar la investigación.");
+        apiKey.focus();
+        return;
+    }
+
     prepararInterfaz();
 
     try {
+        if (MODO_NAVEGADOR) {
+            guardarPreferenciaApiKey(clave);
+            await investigarEnNavegador(textoPregunta, clave, manejarEvento);
+            return;
+        }
+
         const respuesta = await fetch(
             "/api/investigar",
             {
@@ -124,6 +175,11 @@ function procesarEventoSSE(bloque) {
         return;
     }
 
+    manejarEvento(tipo, contenido);
+}
+
+
+function manejarEvento(tipo, contenido) {
     if (tipo === "estado") {
         actualizarEstado(
             contenido.etapa,

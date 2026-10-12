@@ -170,6 +170,48 @@
                             placeholder="Ejemplo: ¿Cuáles son las principales tecnologías de conectividad utilizadas actualmente en IoT y en qué escenarios conviene utilizar cada una?"
                         ></textarea>
 
+                        <div
+                            id="panelApiKey"
+                            class="mt-4 d-none"
+                        >
+                            <label
+                                for="apiKey"
+                                class="form-label fw-semibold"
+                            >
+                                <i class="bi bi-key me-1"></i>
+                                Tu API Key de OpenAI
+                            </label>
+
+                            <input
+                                id="apiKey"
+                                type="password"
+                                class="form-control"
+                                placeholder="sk-..."
+                                autocomplete="off"
+                                spellcheck="false"
+                            >
+
+                            <div class="form-check mt-2">
+                                <input
+                                    id="recordarApiKey"
+                                    class="form-check-input"
+                                    type="checkbox"
+                                >
+                                <label
+                                    for="recordarApiKey"
+                                    class="form-check-label helper-text"
+                                >
+                                    Recordarla en este navegador
+                                </label>
+                            </div>
+
+                            <div class="helper-text mt-1">
+                                <i class="bi bi-shield-lock me-1"></i>
+                                La clave solo se usa en tu navegador para llamar a OpenAI;
+                                no se envía ni se guarda en ningún otro lugar.
+                            </div>
+                        </div>
+
                         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mt-4">
                             <div class="helper-text">
                                 <i class="bi bi-info-circle me-1"></i>
@@ -389,6 +431,11 @@
         </div>
     </footer>
 
+    <script>
+        // El flujo de GitHub Pages cambia este valor a "navegador"
+        window.AGENTE_MODO = "servidor";
+    </script>
+    <script src="{{ url_for('static', filename='js/navegador.js') }}"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 
 </body>

@@ -62,6 +62,19 @@ python app.py
 
 Antes, copia `config.example.py` a `config.py` y escribe tu API Key.
 
+## Publicar en GitHub Pages
+
+GitHub Pages no ejecuta Python, así que la versión publicada funciona
+completamente en el navegador (`static/js/navegador.js`): llama directo a
+OpenAI y cada visitante escribe su propia API Key en la página.
+
+- El flujo `.github/workflows/pages.yml` publica el sitio en cada `git push` a `main`.
+- Una sola vez: en GitHub, **Settings → Pages → Source: GitHub Actions**.
+- Los prompts están en `static/prompts.json` y los usan las dos versiones
+  (Flask y GitHub Pages).
+- El modelo de la versión publicada se cambia en `MODELO_NAVEGADOR`
+  (`static/js/navegador.js`).
+
 ## V5 - Corrección de alineación
 
 - Se eliminó el scroll horizontal general de la página.
