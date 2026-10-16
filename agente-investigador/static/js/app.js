@@ -44,6 +44,38 @@ if (MODO_NAVEGADOR) {
     } catch {
         // Sin acceso a localStorage: el visitante escribe la clave cada vez
     }
+
+    cargarApiKeyDesdeEnlace();
+}
+
+
+// Permite compartir un enlace .../#key=sk-... que llena la API Key.
+// El fragmento (#) no se envía a ningún servidor; se borra de la barra
+// de direcciones y la clave se conserva solo mientras la pestaña esté abierta.
+function cargarApiKeyDesdeEnlace() {
+    const CLAVE_SESION = "agente-investigador-api-key-enlace";
+    const parametros = new URLSearchParams(location.hash.substring(1));
+    const claveEnlace = parametros.get("key");
+
+    try {
+        if (claveEnlace) {
+            sessionStorage.setItem(CLAVE_SESION, claveEnlace);
+        }
+
+        const claveSesion = claveEnlace || sessionStorage.getItem(CLAVE_SESION);
+
+        if (claveSesion) {
+            apiKey.value = claveSesion;
+        }
+    } catch {
+        if (claveEnlace) {
+            apiKey.value = claveEnlace;
+        }
+    }
+
+    if (claveEnlace) {
+        history.replaceState(null, "", location.pathname + location.search);
+    }
 }
 
 
