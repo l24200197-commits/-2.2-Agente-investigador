@@ -4,12 +4,21 @@ import os
 from flask import Flask, Response, render_template, request, stream_with_context
 from openai import OpenAI
 
-from config import OPENAI_API_KEY, OPENAI_MODEL
+# En local se usa config.py; en Vercel, las variables de entorno del proyecto
+try:
+    from config import OPENAI_API_KEY, OPENAI_MODEL
+except ImportError:
+    OPENAI_API_KEY = None
+    OPENAI_MODEL = None
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") or OPENAI_API_KEY
+OPENAI_MODEL = os.getenv("OPENAI_MODEL") or OPENAI_MODEL or "gpt-6-luna"
 
 
 app = Flask(__name__)
 
-client = OpenAI(api_key=OPENAI_API_KEY)
+# Sin API Key la app arranca igual y avisa en cada consulta
+client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
 
 @app.route("/")
@@ -102,6 +111,18 @@ def es_pregunta_tic(pregunta):
 def investigar():
     datos = request.get_json(silent=True) or {}
     pregunta = datos.get("pregunta", "").strip()
+
+    if client is None:
+        return Response(
+            sse(
+                "error",
+                {
+                    "mensaje": "Falta configurar OPENAI_API_KEY en el servidor."
+                }
+            ),
+            mimetype="text/event-stream",
+            status=500
+        )
 
     if not pregunta:
         return Response(
